@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Local config
+.env
+.env.*
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+
+# Project wiki / local notes
+wiki/
+
+# Data folders
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/test/*
+!data/test/.gitkeep
+
+results/images/*
+!results/images/.gitkeep
+results/graphs/*
+!results/graphs/.gitkeep
+results/reports/*
+!results/reports/.gitkeep
