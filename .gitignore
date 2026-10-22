@@ -49,3 +49,4 @@ results/graphs/*
 !results/graphs/.gitkeep
 results/reports/*
 !results/reports/.gitkeep
+wikis/
