@@ -28,6 +28,7 @@ Les photographies seront prises dans des conditions contrôlées (éclairage, di
 
 - [x] Choix du sujet et de la devise
 - [x] Définition des conditions d'acquisition
+- [ ] Définir la structure du projet
 - [ ] Constitution du jeu de données
 - [ ] Prétraitement des images
 - [ ] Détection et segmentation des pièces
