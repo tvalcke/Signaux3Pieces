@@ -37,7 +37,7 @@ Les photographies seront prises dans des conditions contrôlées (éclairage, di
 
 ## Équipe
 
-1. Étudiant 1 : [à compléter]
+1. Étudiant 1 : [Valcke Tristan]
 2. Étudiant 2 : [à compléter]
 3. Étudiant 3 : [à compléter]
 4. Étudiant 4 : [à compléter]
