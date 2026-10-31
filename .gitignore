@@ -34,10 +34,19 @@ dist/
 
 # Project wiki / local notes
 wiki/
+wikis/
 
 # Data folders
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/EUR/
+!data/raw/TWD/
+
+data/raw/EUR/*
+data/raw/TWD/*
+!data/raw/EUR/.gitkeep
+!data/raw/TWD/.gitkeep
+
 data/processed/*
 !data/processed/.gitkeep
 data/test/*
@@ -49,4 +58,4 @@ results/graphs/*
 !results/graphs/.gitkeep
 results/reports/*
 !results/reports/.gitkeep
-wikis/
+

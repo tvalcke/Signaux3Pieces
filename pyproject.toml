@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "signaux3-pieces"
 version = "0.1.0"
-description = "Projet académique de reconnaissance de pièces TWD"
+description = "Projet de reconnaissance de pièces - Signaux III"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 authors = [{ name = "Équipe du projet Signaux III" }]
@@ -13,6 +13,7 @@ dependencies = [
     "opencv-python",
     "numpy",
     "matplotlib",
+    "pillow",
     "pytest",
 ]
 
