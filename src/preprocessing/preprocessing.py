@@ -2,7 +2,7 @@
 
 Ce module contiendra à terme les fonctions et classes nécessaires pour
 normaliser, nettoyer et améliorer les images avant la détection et la
-classification des pièces.
+classification des pièces
 """
 
 

@@ -39,11 +39,12 @@ Les dossiers EUR et TWD sont créés et permettent de préparer le système de s
 
 ## Formats d'images acceptés
 
-- PNG
 - JPG
+par la suite, tester avec - 
+(- PNG
 - JPEG
 - BMP
-- TIFF
+- TIFF)
 
 Pour les images ( ce msg sera visible si vous bossez un peu et donc lisez cau moins le readme...) demandez à Tris
 
