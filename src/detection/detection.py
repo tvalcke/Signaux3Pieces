@@ -1,7 +1,7 @@
 """Module de détection des objets.
 
 Ce module contiendra à terme la logique permettant de détecter et d'isoler
-les pièces présentes dans une image.
+les pièces présentes dans une image
 """
 
 

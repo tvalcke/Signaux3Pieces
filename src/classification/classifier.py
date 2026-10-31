@@ -1,7 +1,7 @@
 """Module de classification.
 
 Ce module contiendra à terme l'algorithme utilisé pour attribuer à une pièce
-sa valeur nominale à partir des caractéristiques extraites.
+sa valeur nominale à partir des caractéristiques extraites
 """
 
 

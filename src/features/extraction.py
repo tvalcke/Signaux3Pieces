@@ -1,7 +1,7 @@
 """Module d'extraction de caractéristiques.
 
 Ce module défini les fonctions qui permettront de calculer des mesures
-utiles pour distinguer les pièces à partir des régions détectées.
+utiles pour distinguer les pièces à partir des régions détectées
 """
 
 
