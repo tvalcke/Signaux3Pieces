@@ -45,6 +45,8 @@ Les dossiers EUR et TWD sont créés et permettent de préparer le système de s
 - BMP
 - TIFF
 
+Pour les images ( ce msg sera visible si vous bossez un peu et donc lisez cau moins le readme...) demandez à Tris
+
 ## Lancement de l'application
 
 Commande depuis la racine du dépôt :
