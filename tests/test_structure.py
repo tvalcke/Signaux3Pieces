@@ -1,4 +1,4 @@
-"""Tests de validation de base pour l'architecture du projet."""
+"""Tests de validation de base pour l'architecture du projet. - écrits et importés depuis ChatGPT """
 
 import importlib
 
