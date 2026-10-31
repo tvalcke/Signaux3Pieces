@@ -1,4 +1,4 @@
-"""Interface principale de l'application de reconnaissance de pièces."""
+"""Interface principale de l'application de reconnaissance de pièces - fichier partiellement réalisé avec claude ( car ce n'est pas le sujet du cours + gagner du temps)"""
 
 from __future__ import annotations
 
@@ -6,18 +6,20 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, ttk
 
+import cv2
 from PIL import Image, ImageOps
 from PIL import ImageTk
 
+from src.acquisition.image_loader import load_image
 from src.config import (
     DEFAULT_CURRENCY,
-    ALLOWED_IMAGE_EXTENSIONS,
     get_currency_choices,
     get_currency_directory,
     get_currency_label,
     is_path_allowed_for_currency,
     is_supported_image_extension,
 )
+from src.preprocessing.preprocessing import to_grayscale
 
 
 class CoinRecognitionApp(tk.Tk):
@@ -33,6 +35,8 @@ class CoinRecognitionApp(tk.Tk):
         self.current_image_path: Path | None = None
         self.current_image: Image.Image | None = None
         self.preview_photo: ImageTk.PhotoImage | None = None
+        self.original_preview_photo: ImageTk.PhotoImage | None = None
+        self.gray_preview_photo: ImageTk.PhotoImage | None = None
 
         self.currency_var = tk.StringVar(value=self.current_currency)
         self.file_name_var = tk.StringVar(value="Aucun fichier sélectionné")
@@ -109,14 +113,17 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_panel.configure(height=360)
         self.preview_panel.pack_propagate(False)
 
-        self.preview_label = ttk.Label(
-            self.preview_panel,
-            text="Aucune image sélectionnée",
-            anchor="center",
-            justify="center",
-            wraplength=500,
-        )
-        self.preview_label.pack(fill="both", expand=True)
+        self.preview_container = ttk.Frame(self.preview_panel)
+        self.preview_container.pack(fill="both", expand=True)
+
+        self.preview_left = ttk.Label(self.preview_container, text="Image originale", anchor="center")
+        self.preview_right = ttk.Label(self.preview_container, text="Niveaux de gris", anchor="center")
+
+        self.preview_left.grid(row=0, column=0, sticky="nsew", padx=(0, 8), pady=(0, 8))
+        self.preview_right.grid(row=0, column=1, sticky="nsew", padx=(8, 0), pady=(0, 8))
+        self.preview_container.grid_columnconfigure(0, weight=1)
+        self.preview_container.grid_columnconfigure(1, weight=1)
+        self.preview_container.grid_rowconfigure(0, weight=1)
 
         self.preview_panel.bind("<Configure>", self._refresh_preview)
 
@@ -161,9 +168,12 @@ class CoinRecognitionApp(tk.Tk):
         self.current_image_path = None
         self.current_image = None
         self.preview_photo = None
+        self.original_preview_photo = None
+        self.gray_preview_photo = None
         self.file_name_var.set("Aucun fichier sélectionné")
         self.image_info_var.set("Dimensions : --")
-        self.preview_label.configure(text="Aucune image sélectionnée", image="")
+        self.preview_left.configure(text="Image originale", image="")
+        self.preview_right.configure(text="Niveaux de gris", image="")
         self.analyse_button.configure(state="disabled")
 
     def _reset_results(self) -> None:
@@ -232,27 +242,53 @@ class CoinRecognitionApp(tk.Tk):
     def _refresh_preview(self, _event: tk.Event | None = None) -> None:
         """Affiche l'image chargée dans le panneau de prévisualisation."""
         if self.current_image is None:
-            self.preview_label.configure(text="Aucune image sélectionnée", image="")
+            self.preview_left.configure(text="Image originale", image="")
+            self.preview_right.configure(text="Niveaux de gris", image="")
             return
 
-        preview_width = max(200, self.preview_panel.winfo_width() - 30)
+        preview_width = max(200, int((self.preview_panel.winfo_width() - 60) / 2))
         preview_height = max(180, self.preview_panel.winfo_height() - 30)
 
         resized_image = ImageOps.contain(self.current_image, (preview_width, preview_height))
         self.preview_photo = ImageTk.PhotoImage(resized_image)
-        self.preview_label.configure(image=self.preview_photo, text="")
+        self.preview_left.configure(image=self.preview_photo, text="")
+        self.preview_right.configure(text="Niveaux de gris", image="")
 
     def run_analysis(self) -> None:
-        """Lance l'analyse sans implémenter le moteur d'image; réservé à la phase suivante."""
+        """Charge l'image sélectionnée et affiche la version originale et en niveaux de gris."""
         if self.current_image_path is None:
             self._refresh_status("Erreur : aucune image n'a été chargée.")
             self._show_result("Aucune image sélectionnée pour l'analyse.")
             return
 
-        self._refresh_status(f"Analyse demandée pour {self.current_image_path.name}")
+        try:
+            original_array = load_image(self.current_image_path)
+            gray_array = to_grayscale(original_array)
+        except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
+            self._refresh_status("Erreur lors du chargement de l'image.")
+            self._show_result(f"Impossible de charger l'image : {exc}")
+            return
+
+        rgb_array = cv2.cvtColor(original_array, cv2.COLOR_BGR2RGB)
+        original_pil = Image.fromarray(rgb_array)
+        gray_pil = Image.fromarray(gray_array)
+
+        preview_width = max(200, int((self.preview_panel.winfo_width() - 80) / 2))
+        preview_height = max(180, self.preview_panel.winfo_height() - 60)
+
+        original_resized = ImageOps.contain(original_pil, (preview_width, preview_height))
+        gray_resized = ImageOps.contain(gray_pil, (preview_width, preview_height))
+
+        self.original_preview_photo = ImageTk.PhotoImage(original_resized)
+        self.gray_preview_photo = ImageTk.PhotoImage(gray_resized)
+
+        self.preview_left.configure(image=self.original_preview_photo, text="")
+        self.preview_right.configure(image=self.gray_preview_photo, text="")
+
+        self._refresh_status(f"Conversion terminée : {self.current_image_path.name}")
         self._show_result(
-            "Le module de traitement d'image n'est pas encore implémenté.\n"
-            "La reconnaissance automatique des pièces et le calcul du montant seront ajoutés lors de la prochaine phase."
+            "Conversion en niveaux de gris terminée.\n"
+            "L'image originale et sa version en nuances de gris sont affichées côte à côte."
         )
 
     def _show_result(self, message: str) -> None:

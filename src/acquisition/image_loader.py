@@ -19,16 +19,16 @@ def load_image(image_path: str | Path) -> np.ndarray:
     Return
     -------
     np.ndarray
-        Image couleur OpenCV en BGR, avec 3 canaux et type uint8.
+        Image couleur OpenCV en BGR, avec 3 canaux et type uint8
 
     Raises
     ------
     FileNotFoundError
-        Si le fichier n'existe pas.
+        Si le fichier n'existe pas
     IsADirectoryError
-        Si le chemin pointe vers un dossier.
+        Si le chemin pointe vers un dossier
     ValueError
-        Si le fichier est vide, corrompu ou ne représente pas une image valide.
+        Si le fichier est vide, corrompu ou ne représente pas une image valide
     """
     path = Path(image_path)
 
