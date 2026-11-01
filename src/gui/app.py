@@ -22,9 +22,9 @@ from src.config import (
 from src.detection.detection import detect_edges
 from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
 
-GAUSSIAN_KERNEL_SIZE = 5
-CANNY_THRESHOLD1 = 50
-CANNY_THRESHOLD2 = 150
+GAUSSIAN_KERNEL_SIZE = 7
+CANNY_THRESHOLD1 = 40
+CANNY_THRESHOLD2 = 120
 
 
 class CoinRecognitionApp(tk.Tk):
@@ -308,7 +308,9 @@ class CoinRecognitionApp(tk.Tk):
             text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
         )
 
-        self._refresh_status(f"Détection des contours terminée (Canny : {CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})")
+        self._refresh_status(
+            f"Détection des contours terminée (Gaussien {GAUSSIAN_KERNEL_SIZE} × {GAUSSIAN_KERNEL_SIZE}, Canny {CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})"
+        )
         self._show_result(
             "Détection des contours terminée.\n"
             "L'image originale reste affichée à gauche et les contours Canny sont affichés à droite."
