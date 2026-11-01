@@ -58,3 +58,44 @@ def to_grayscale(image: np.ndarray) -> np.ndarray:
 
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     return gray_image
+
+
+def gaussian_blur(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
+    """Applique un filtre gaussien sur  im en niveau de gris
+
+    Paramètres
+    ----------
+    image : np.ndarray
+        Image en niveaux de gris, de forme (hauteur, largeur).
+    kernel_size : int, default=5
+        Taille du noyau gaussien. Doit être un entier positif impair.
+
+    Retourne
+    -------
+    np.ndarray
+        Nouvelle image filtrée, sans modifier l'image d'origine.
+
+    Raises
+    ------
+    TypeError
+        Si l'entrée n'est pas un tableau NumPy
+    ValueError
+        si l'image est vide, n'a pas exactement 2 dimensions ou si le noyau est invalide
+    """
+    if not isinstance(image, np.ndarray):
+        raise TypeError("L'image doit être un tableau NumPy.")
+
+    if image.size == 0:
+        raise ValueError("L'image ne peut pas être vide.")
+
+    if image.ndim != 2:
+        raise ValueError("L'image doit être en niveaux de gris avec exactement 2 dimensions.")
+
+    if not isinstance(kernel_size, (int, np.integer)):
+        raise ValueError("kernel_size doit être un entier positif impair.")
+
+    if kernel_size <= 0 or kernel_size % 2 == 0:
+        raise ValueError("kernel_size doit être un entier positif et impair.")
+
+    blurred_image = cv2.GaussianBlur(image, (kernel_size, kernel_size), 0)
+    return blurred_image

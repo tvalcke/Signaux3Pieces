@@ -19,7 +19,12 @@ from src.config import (
     is_path_allowed_for_currency,
     is_supported_image_extension,
 )
-from src.preprocessing.preprocessing import to_grayscale
+from src.detection.detection import detect_edges
+from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
+
+GAUSSIAN_KERNEL_SIZE = 7
+CANNY_THRESHOLD1 = 40
+CANNY_THRESHOLD2 = 120
 
 
 class CoinRecognitionApp(tk.Tk):
@@ -117,7 +122,11 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_container.pack(fill="both", expand=True)
 
         self.preview_left = ttk.Label(self.preview_container, text="Image originale", anchor="center")
-        self.preview_right = ttk.Label(self.preview_container, text="Niveaux de gris", anchor="center")
+        self.preview_right = ttk.Label(
+            self.preview_container,
+            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            anchor="center",
+        )
 
         self.preview_left.grid(row=0, column=0, sticky="nsew", padx=(0, 8), pady=(0, 8))
         self.preview_right.grid(row=0, column=1, sticky="nsew", padx=(8, 0), pady=(0, 8))
@@ -173,7 +182,10 @@ class CoinRecognitionApp(tk.Tk):
         self.file_name_var.set("Aucun fichier sélectionné")
         self.image_info_var.set("Dimensions : --")
         self.preview_left.configure(text="Image originale", image="")
-        self.preview_right.configure(text="Niveaux de gris", image="")
+        self.preview_right.configure(
+            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            image="",
+        )
         self.analyse_button.configure(state="disabled")
 
     def _reset_results(self) -> None:
@@ -243,7 +255,10 @@ class CoinRecognitionApp(tk.Tk):
         """Affiche l'image chargée dans le panneau de prévisualisation."""
         if self.current_image is None:
             self.preview_left.configure(text="Image originale", image="")
-            self.preview_right.configure(text="Niveaux de gris", image="")
+            self.preview_right.configure(
+                text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+                image="",
+            )
             return
 
         preview_width = max(200, int((self.preview_panel.winfo_width() - 60) / 2))
@@ -252,10 +267,13 @@ class CoinRecognitionApp(tk.Tk):
         resized_image = ImageOps.contain(self.current_image, (preview_width, preview_height))
         self.preview_photo = ImageTk.PhotoImage(resized_image)
         self.preview_left.configure(image=self.preview_photo, text="")
-        self.preview_right.configure(text="Niveaux de gris", image="")
+        self.preview_right.configure(
+            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            image="",
+        )
 
     def run_analysis(self) -> None:
-        """Charge l'image sélectionnée et affiche la version originale et en niveaux de gris."""
+        """Charge l'image, applique le filtre gaussien puis détecte les contours."""
         if self.current_image_path is None:
             self._refresh_status("Erreur : aucune image n'a été chargée.")
             self._show_result("Aucune image sélectionnée pour l'analyse.")
@@ -264,31 +282,38 @@ class CoinRecognitionApp(tk.Tk):
         try:
             original_array = load_image(self.current_image_path)
             gray_array = to_grayscale(original_array)
+            blurred_array = gaussian_blur(gray_array, kernel_size=GAUSSIAN_KERNEL_SIZE)
+            edges_array = detect_edges(blurred_array, threshold1=CANNY_THRESHOLD1, threshold2=CANNY_THRESHOLD2)
         except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
-            self._refresh_status("Erreur lors du chargement de l'image.")
-            self._show_result(f"Impossible de charger l'image : {exc}")
+            self._refresh_status("Erreur lors de la détection des contours.")
+            self._show_result(f"Impossible de traiter l'image : {exc}")
             return
 
         rgb_array = cv2.cvtColor(original_array, cv2.COLOR_BGR2RGB)
         original_pil = Image.fromarray(rgb_array)
-        gray_pil = Image.fromarray(gray_array)
+        edges_pil = Image.fromarray(edges_array)
 
         preview_width = max(200, int((self.preview_panel.winfo_width() - 80) / 2))
         preview_height = max(180, self.preview_panel.winfo_height() - 60)
 
         original_resized = ImageOps.contain(original_pil, (preview_width, preview_height))
-        gray_resized = ImageOps.contain(gray_pil, (preview_width, preview_height))
+        edges_resized = ImageOps.contain(edges_pil, (preview_width, preview_height))
 
         self.original_preview_photo = ImageTk.PhotoImage(original_resized)
-        self.gray_preview_photo = ImageTk.PhotoImage(gray_resized)
+        self.gray_preview_photo = ImageTk.PhotoImage(edges_resized)
 
         self.preview_left.configure(image=self.original_preview_photo, text="")
-        self.preview_right.configure(image=self.gray_preview_photo, text="")
+        self.preview_right.configure(
+            image=self.gray_preview_photo,
+            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+        )
 
-        self._refresh_status(f"Conversion terminée : {self.current_image_path.name}")
+        self._refresh_status(
+            f"Détection des contours terminée (Gaussien {GAUSSIAN_KERNEL_SIZE} × {GAUSSIAN_KERNEL_SIZE}, Canny {CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})"
+        )
         self._show_result(
-            "Conversion en niveaux de gris terminée.\n"
-            "L'image originale et sa version en nuances de gris sont affichées côte à côte."
+            "Détection des contours terminée.\n"
+            "L'image originale reste affichée à gauche et les contours Canny sont affichés à droite."
         )
 
     def _show_result(self, message: str) -> None:
