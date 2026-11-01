@@ -83,7 +83,7 @@ La sélection de devise réinitialise l'image précédente dès que l'utilisateu
 ## Équipe
 
 - Étudiant 1 : Valcke Tristan
-- Étudiant 2 : à compléter
+- Étudiant 2 : Gaspard Munguia Coca 
 - Étudiant 3 : à compléter
 - Étudiant 4 : à compléter
 
