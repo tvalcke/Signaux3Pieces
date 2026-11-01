@@ -19,8 +19,9 @@ from src.config import (
     is_path_allowed_for_currency,
     is_supported_image_extension,
 )
-from src.detection.detection import detect_edges
+from src.detection.detection import detect_circles, detect_edges
 from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
+from src.utils.visualization import draw_circles
 
 GAUSSIAN_KERNEL_SIZE = 7
 CANNY_THRESHOLD1 = 40
@@ -124,7 +125,7 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_left = ttk.Label(self.preview_container, text="Image originale", anchor="center")
         self.preview_right = ttk.Label(
             self.preview_container,
-            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            text="Pièces détectées — Hough",
             anchor="center",
         )
 
@@ -183,7 +184,7 @@ class CoinRecognitionApp(tk.Tk):
         self.image_info_var.set("Dimensions : --")
         self.preview_left.configure(text="Image originale", image="")
         self.preview_right.configure(
-            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            text="Pièces détectées — Hough",
             image="",
         )
         self.analyse_button.configure(state="disabled")
@@ -256,7 +257,7 @@ class CoinRecognitionApp(tk.Tk):
         if self.current_image is None:
             self.preview_left.configure(text="Image originale", image="")
             self.preview_right.configure(
-                text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+                text="Pièces détectées — Hough",
                 image="",
             )
             return
@@ -268,12 +269,12 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_photo = ImageTk.PhotoImage(resized_image)
         self.preview_left.configure(image=self.preview_photo, text="")
         self.preview_right.configure(
-            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            text="Pièces détectées — Hough",
             image="",
         )
 
     def run_analysis(self) -> None:
-        """Charge l'image, applique le filtre gaussien puis détecte les contours."""
+        """Charge l'image, filtre, détecte les cercles et les affiche dans l'interface."""
         if self.current_image_path is None:
             self._refresh_status("Erreur : aucune image n'a été chargée.")
             self._show_result("Aucune image sélectionnée pour l'analyse.")
@@ -283,38 +284,45 @@ class CoinRecognitionApp(tk.Tk):
             original_array = load_image(self.current_image_path)
             gray_array = to_grayscale(original_array)
             blurred_array = gaussian_blur(gray_array, kernel_size=GAUSSIAN_KERNEL_SIZE)
-            edges_array = detect_edges(blurred_array, threshold1=CANNY_THRESHOLD1, threshold2=CANNY_THRESHOLD2)
+            circles = detect_circles(blurred_array)
+            annotated_array = draw_circles(original_array, circles)
         except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
-            self._refresh_status("Erreur lors de la détection des contours.")
+            self._refresh_status("Erreur lors de la détection des cercles.")
             self._show_result(f"Impossible de traiter l'image : {exc}")
             return
 
-        rgb_array = cv2.cvtColor(original_array, cv2.COLOR_BGR2RGB)
-        original_pil = Image.fromarray(rgb_array)
-        edges_pil = Image.fromarray(edges_array)
+        rgb_original = cv2.cvtColor(original_array, cv2.COLOR_BGR2RGB)
+        rgb_annotated = cv2.cvtColor(annotated_array, cv2.COLOR_BGR2RGB)
+
+        original_pil = Image.fromarray(rgb_original)
+        annotated_pil = Image.fromarray(rgb_annotated)
 
         preview_width = max(200, int((self.preview_panel.winfo_width() - 80) / 2))
         preview_height = max(180, self.preview_panel.winfo_height() - 60)
 
         original_resized = ImageOps.contain(original_pil, (preview_width, preview_height))
-        edges_resized = ImageOps.contain(edges_pil, (preview_width, preview_height))
+        annotated_resized = ImageOps.contain(annotated_pil, (preview_width, preview_height))
 
         self.original_preview_photo = ImageTk.PhotoImage(original_resized)
-        self.gray_preview_photo = ImageTk.PhotoImage(edges_resized)
+        self.gray_preview_photo = ImageTk.PhotoImage(annotated_resized)
 
         self.preview_left.configure(image=self.original_preview_photo, text="")
         self.preview_right.configure(
             image=self.gray_preview_photo,
-            text=f"Contours — Canny ({CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})",
+            text="Pièces détectées — Hough",
         )
 
-        self._refresh_status(
-            f"Détection des contours terminée (Gaussien {GAUSSIAN_KERNEL_SIZE} × {GAUSSIAN_KERNEL_SIZE}, Canny {CANNY_THRESHOLD1} / {CANNY_THRESHOLD2})"
-        )
-        self._show_result(
-            "Détection des contours terminée.\n"
-            "L'image originale reste affichée à gauche et les contours Canny sont affichés à droite."
-        )
+        self._refresh_status(f"Détection terminée : {len(circles)} cercle(s) détecté(s)")
+
+        if not circles:
+            self._show_result("Aucun cercle détecté.")
+            return
+
+        details = [f"Nombre de cercles détectés : {len(circles)}"]
+        for index, (x, y, radius) in enumerate(circles, start=1):
+            details.append(f"Cercle {index} : centre=({x}, {y}), rayon={radius} px")
+
+        self._show_result("\n".join(details))
 
     def _show_result(self, message: str) -> None:
         """Met à jour la zone de résultats avec un message lisible."""

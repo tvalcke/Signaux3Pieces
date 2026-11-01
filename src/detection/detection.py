@@ -57,3 +57,41 @@ def detect_edges(
 
     edges = cv2.Canny(image, int(threshold1), int(threshold2))
     return edges
+
+
+def detect_circles(image: np.ndarray) -> list[tuple[int, int, int]]:
+    """Détecte les cercles dans une image en niveaux de gris ( de l'étape 3)"""
+    if not isinstance(image, np.ndarray):
+        raise ValueError("L'image doit être un tableau NumPy.")
+
+    if image.size == 0:
+        raise ValueError("L'image ne peut pas être vide.")
+
+    if image.ndim != 2:
+        raise ValueError("L'image doit être une image en niveaux de gris en 2dimensions.")
+
+    if image.dtype != np.uint8:
+        raise ValueError("L'image doit être de type uint8.")
+
+    circles = cv2.HoughCircles(  #Données chiffrées trouvées grâce à chatgpt à force d'affinage
+        image,
+        cv2.HOUGH_GRADIENT,
+        dp=1.2,
+        minDist=300,
+        param1=120,
+        param2=45,
+        minRadius=130,
+        maxRadius=250,
+    )
+
+    if circles is None:
+        return []
+
+    found_circles = []
+    for circle in circles[0]:
+        x = int(np.round(circle[0]))
+        y = int(np.round(circle[1]))
+        radius = int(np.round(circle[2]))
+        found_circles.append((x, y, radius))
+
+    return found_circles
