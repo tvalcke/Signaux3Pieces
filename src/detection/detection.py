@@ -6,6 +6,8 @@ les pièces présentes dans une image
 
 from __future__ import annotations
 
+import math
+
 import cv2
 import numpy as np
 
@@ -95,3 +97,46 @@ def detect_circles(image: np.ndarray) -> list[tuple[int, int, int]]:
         found_circles.append((x, y, radius))
 
     return found_circles
+
+
+def filter_circles(
+    circles: list[tuple[int, int, int]],
+    image_shape: tuple[int, ...],
+) -> list[tuple[int, int, int]]:
+    """Filtre les cercles détectés pour garder ceux qui sont crédibles, pas détecter du bruit ou d'autres cercles"""
+    if not circles:
+        return []
+
+    if len(image_shape) < 2:
+        return []
+
+    height = int(image_shape[0])
+    width = int(image_shape[1])
+    valid_circles: list[tuple[int, int, int]] = []
+
+    for x, y, radius in circles:
+        if radius <= 0:
+            continue
+
+        if x < 0 or y < 0 or x >= width or y >= height:
+            continue
+
+        if radius > max(width, height):
+            continue
+
+        is_duplicate = False
+        for saved_x, saved_y, saved_radius in valid_circles:
+            distance = math.hypot(x - saved_x, y - saved_y)
+            min_radius = min(radius, saved_radius)
+
+            if (
+                distance < 0.20 * min_radius
+                and abs(radius - saved_radius) < 0.15 * min_radius
+            ):
+                is_duplicate = True
+                break
+
+        if not is_duplicate:
+            valid_circles.append((x, y, radius))
+
+    return valid_circles
