@@ -19,7 +19,7 @@ from src.config import (
     is_path_allowed_for_currency,
     is_supported_image_extension,
 )
-from src.detection.detection import detect_circles, detect_edges
+from src.detection.detection import detect_circles, detect_edges, filter_circles
 from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
 from src.utils.visualization import draw_circles
 
@@ -125,7 +125,7 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_left = ttk.Label(self.preview_container, text="Image originale", anchor="center")
         self.preview_right = ttk.Label(
             self.preview_container,
-            text="Pièces détectées — Hough",
+            text="Pièces détectées — Hough + filtrage",
             anchor="center",
         )
 
@@ -138,10 +138,29 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_panel.bind("<Configure>", self._refresh_preview)
 
         result_frame = ttk.LabelFrame(self.main_frame, text="Résultats de l'analyse", padding=10)
-        result_frame.pack(fill="x", pady=(12, 0))
+        result_frame.pack(fill="both", expand=True, pady=(12, 0))
 
-        self.result_text = tk.Text(result_frame, height=7, wrap="word", state="disabled")
+        result_container = ttk.Frame(result_frame)
+        result_container.pack(fill="both", expand=True)
+
+        self.result_scrollbar_y = ttk.Scrollbar(result_container, orient="vertical")
+        self.result_scrollbar_y.pack(side="right", fill="y")
+
+        self.result_scrollbar_x = ttk.Scrollbar(result_container, orient="horizontal")
+        self.result_scrollbar_x.pack(side="bottom", fill="x")
+
+        self.result_text = tk.Text(
+            result_container,
+            height=7,
+            wrap="word",
+            state="disabled",
+            yscrollcommand=self.result_scrollbar_y.set,
+            xscrollcommand=self.result_scrollbar_x.set,
+        )
         self.result_text.pack(fill="both", expand=True)
+
+        self.result_scrollbar_y.configure(command=self.result_text.yview)
+        self.result_scrollbar_x.configure(command=self.result_text.xview)
 
         self.status_bar = ttk.Label(
             self,
@@ -184,7 +203,7 @@ class CoinRecognitionApp(tk.Tk):
         self.image_info_var.set("Dimensions : --")
         self.preview_left.configure(text="Image originale", image="")
         self.preview_right.configure(
-            text="Pièces détectées — Hough",
+            text="Pièces détectées — Hough + filtrage",
             image="",
         )
         self.analyse_button.configure(state="disabled")
@@ -257,7 +276,7 @@ class CoinRecognitionApp(tk.Tk):
         if self.current_image is None:
             self.preview_left.configure(text="Image originale", image="")
             self.preview_right.configure(
-                text="Pièces détectées — Hough",
+                text="Pièces détectées — Hough + filtrage",
                 image="",
             )
             return
@@ -269,7 +288,7 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_photo = ImageTk.PhotoImage(resized_image)
         self.preview_left.configure(image=self.preview_photo, text="")
         self.preview_right.configure(
-            text="Pièces détectées — Hough",
+            text="Pièces détectées — Hough + filtrage",
             image="",
         )
 
@@ -285,7 +304,8 @@ class CoinRecognitionApp(tk.Tk):
             gray_array = to_grayscale(original_array)
             blurred_array = gaussian_blur(gray_array, kernel_size=GAUSSIAN_KERNEL_SIZE)
             circles = detect_circles(blurred_array)
-            annotated_array = draw_circles(original_array, circles)
+            valid_circles = filter_circles(circles, original_array.shape)
+            annotated_array = draw_circles(original_array, valid_circles)
         except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
             self._refresh_status("Erreur lors de la détection des cercles.")
             self._show_result(f"Impossible de traiter l'image : {exc}")
@@ -309,18 +329,27 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_left.configure(image=self.original_preview_photo, text="")
         self.preview_right.configure(
             image=self.gray_preview_photo,
-            text="Pièces détectées — Hough",
+            text="Pièces détectées — Hough + filtrage",
         )
 
-        self._refresh_status(f"Détection terminée : {len(circles)} cercle(s) détecté(s)")
+        rejected = len(circles) - len(valid_circles)
+        self._refresh_status(
+            f"Détection terminée : {len(circles)} détecté(s) par Hough, {len(valid_circles)} conservé(s)."
+        )
 
-        if not circles:
-            self._show_result("Aucun cercle détecté.")
-            return
+        details = [
+            f"Cercles détectés par Hough : {len(circles)}",
+            f"Cercles conservés après filtrage : {len(valid_circles)}",
+            f"Cercles rejetés : {rejected}",
+            "",
+        ]
 
-        details = [f"Nombre de cercles détectés : {len(circles)}"]
-        for index, (x, y, radius) in enumerate(circles, start=1):
-            details.append(f"Cercle {index} : centre=({x}, {y}), rayon={radius} px")
+        if valid_circles:
+            details.append("Cercles conservés :")
+            for index, (x, y, radius) in enumerate(valid_circles, start=1):
+                details.append(f"{index}. centre=({x}, {y}), rayon={radius} px")
+        else:
+            details.append("Aucun cercle n'a été conservé après le filtrage.")
 
         self._show_result("\n".join(details))
 
