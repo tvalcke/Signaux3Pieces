@@ -249,13 +249,41 @@ Le projet permet de détecter des formes circulaires correspondant aux pièces, 
 
 La détection dépend également des conditions de prise de vue, notamment de l'éclairage, du contraste, de la résolution et de la taille apparente des pièces.
 
+
 ## Étapes prévues
 
-- Phase 1 : création de l'interface graphique et sélection des images — terminée.
-- Phase 2A : préparation de l'architecture et des modules de traitement — terminée.
-- Phase 2B : prétraitement, détection et filtrage des pièces — en cours de validation.
-- Phase 3 : extraction des caractéristiques et reconnaissance des valeurs — à développer.
-- Phase 4 : calcul du montant total, validation et documentation finale — à développer.
+### Phase 1 - Interface graphique et structure du projet
+
+- [x] Création de la structure du projet Python.
+- [x] Création de l'interface graphique avec Tkinter.
+- [x] Sélection de la devise (EUR / TWD).
+- [x] Sélection et affichage d'une photographie.
+- [x] Préparation des modules de traitement d'image.
+
+### Phase 2 - Traitement d'image et détection des pièces
+
+- [x] Étape 1 : chargement des images avec OpenCV.
+- [x] Étape 2 : conversion des images en niveaux de gris.
+- [x] Étape 3 : application d'un filtre gaussien pour réduire le bruit.
+- [x] Étape 4 : détection des contours avec l'algorithme de Canny.
+- [x] Étape 5 : détection des pièces circulaires avec la transformée de Hough.
+- [x] Étape 6 : filtrage des détections invalides et suppression des doublons.
+- [x] Étape 7 : visualisation des cercles détectés sur l'image originale.
+- [x] Étape 8 : intégration de la détection dans l'interface Tkinter.
+
+### Phase 3 - Extraction des caractéristiques et reconnaissance
+
+- [ ] Étape 9 : extraction des caractéristiques des pièces (rayon, diamètre, surface, couleur).
+- [ ] Étape 10 : identification de la valeur de chaque pièce à partir des caractéristiques extraites.
+- [ ] Étape 11 : calcul du montant total des pièces reconnues.
+- [ ] Étape 12 : adaptation de la reconnaissance aux pièces en dollars taïwanais (TWD).
+
+### Phase 4 - Validation et finalisation
+
+- [ ] Étape 13 : validation sur différentes photographies (nombre de pièces, éclairage, arrière-plan, position).
+- [ ] Étape 14 : analyse des résultats et des limites des algorithmes utilisés.
+- [ ] Étape 15 : finalisation du rapport, de la documentation et du poster académique.
+
 
 ## Équipe
 
