@@ -36,8 +36,8 @@ class CoinRecognitionApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Signaux III - Reconnaissance de pièces")
-        self.geometry("1000x700")
-        self.minsize(850, 600)
+        self.geometry("1000x900")
+        self.minsize(850, 800)
 
         self.current_currency = DEFAULT_CURRENCY
         self.current_image_path: Path | None = None
@@ -116,10 +116,11 @@ class CoinRecognitionApp(tk.Tk):
         ttk.Label(self.preview_header, textvariable=self.file_name_var).pack(side="left", padx=(20, 0))
         ttk.Label(self.preview_header, textvariable=self.image_info_var).pack(side="left", padx=(20, 0))
 
-        self.preview_panel = ttk.Frame(self.main_frame, padding=10, relief="sunken", borderwidth=1)
-        self.preview_panel.pack(fill="both", expand=True)
-        self.preview_panel.configure(height=360)
-        self.preview_panel.pack_propagate(False)
+        self.content_pane = ttk.Panedwindow(self.main_frame, orient="vertical")
+        self.content_pane.pack(fill="both", expand=True)
+
+        self.preview_panel = ttk.Frame(self.content_pane, padding=10, relief="sunken", borderwidth=1)
+        self.preview_panel.configure(height=280)
 
         self.preview_container = ttk.Frame(self.preview_panel)
         self.preview_container.pack(fill="both", expand=True)
@@ -139,8 +140,7 @@ class CoinRecognitionApp(tk.Tk):
 
         self.preview_panel.bind("<Configure>", self._refresh_preview)
 
-        result_frame = ttk.LabelFrame(self.main_frame, text="Résultats de l'analyse", padding=10)
-        result_frame.pack(fill="both", expand=True, pady=(12, 0))
+        result_frame = ttk.LabelFrame(self.content_pane, text="Résultats de l'analyse", padding=10)
 
         result_container = ttk.Frame(result_frame)
         result_container.pack(fill="both", expand=True)
@@ -153,7 +153,7 @@ class CoinRecognitionApp(tk.Tk):
 
         self.result_text = tk.Text(
             result_container,
-            height=7,
+            height=14,
             wrap="word",
             state="disabled",
             yscrollcommand=self.result_scrollbar_y.set,
@@ -163,6 +163,10 @@ class CoinRecognitionApp(tk.Tk):
 
         self.result_scrollbar_y.configure(command=self.result_text.yview)
         self.result_scrollbar_x.configure(command=self.result_text.xview)
+
+        # Séparateur déplaçable : faites glisser la barre entre l’image et le rapport.
+        self.content_pane.add(self.preview_panel, weight=3)
+        self.content_pane.add(result_frame, weight=2)
 
         self.status_bar = ttk.Label(
             self,
