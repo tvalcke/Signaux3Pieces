@@ -20,6 +20,7 @@ from src.config import (
     is_supported_image_extension,
 )
 from src.detection.detection import detect_circles, detect_edges, filter_circles
+from src.features.extraction import extract_features
 from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
 from src.utils.visualization import draw_circles
 
@@ -305,7 +306,8 @@ class CoinRecognitionApp(tk.Tk):
             blurred_array = gaussian_blur(gray_array, kernel_size=GAUSSIAN_KERNEL_SIZE)
             circles = detect_circles(blurred_array)
             valid_circles = filter_circles(circles, original_array.shape)
-            annotated_array = draw_circles(original_array, valid_circles)
+            features = extract_features(original_array, valid_circles)
+            annotated_array = draw_circles(original_array, valid_circles, features)
         except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
             self._refresh_status("Erreur lors de la détection des cercles.")
             self._show_result(f"Impossible de traiter l'image : {exc}")
@@ -341,15 +343,25 @@ class CoinRecognitionApp(tk.Tk):
             f"Cercles détectés par Hough : {len(circles)}",
             f"Cercles conservés après filtrage : {len(valid_circles)}",
             f"Cercles rejetés : {rejected}",
+            f"Pièces détectées : {len(features)}",
             "",
         ]
 
         if valid_circles:
-            details.append("Cercles conservés :")
-            for index, (x, y, radius) in enumerate(valid_circles, start=1):
-                details.append(f"{index}. centre=({x}, {y}), rayon={radius} px")
+            details.append("Caractéristiques des pièces :")
+            for piece in features:
+                details.append("")
+                details.append(f"Pièce {piece['id']}")
+                details.append(f"Centre : ({piece['x']}, {piece['y']})")
+                details.append(f"Rayon : {piece['radius']} px")
+                details.append(f"Diamètre : {piece['diameter']} px")
+                details.append(f"Surface : {piece['area']} px²")
+                details.append(
+                    "Couleur moyenne (BGR) : "
+                    f"({piece['mean_b']}, {piece['mean_g']}, {piece['mean_r']})"
+                )
         else:
-            details.append("Aucun cercle n'a été conservé après le filtrage.")
+            details.append("Aucune pièce n'a été détectée ou conservée après le filtrage.")
 
         self._show_result("\n".join(details))
 

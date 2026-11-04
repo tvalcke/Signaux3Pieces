@@ -237,12 +237,19 @@ Deux cercles ne sont pas considérés comme identiques uniquement parce qu'ils s
 
 Le filtrage conserve les détections jugées valides pour l'affichage final.
 
+### 7. Extraction des caractéristiques des pièces
+
+Après la détection et le filtrage des cercles, chaque pièce est caractérisée à partir de son centre, de son rayon, de son diamètre et de sa surface théorique.
+
+La couleur moyenne est aussi calculée dans une zone légèrement plus petite que le cercle détecté, afin de limiter l'influence du fond sur les bords de la pièce.
+
+Ces mesures sont stockées dans une liste de dictionnaires Python et servent de base pour les étapes suivantes de reconnaissance et d'analyse.
+
 ## Limites actuelles
 
-Le projet permet de détecter des formes circulaires correspondant aux pièces, mais plusieurs fonctionnalités restent à développer :
+Le projet permet de détecter des formes circulaires correspondant aux pièces et d'extraire leurs caractéristiques de base, mais plusieurs fonctionnalités restent à développer :
 
 - La distinction entre une pièce et un autre objet circulaire.
-- L'extraction des caractéristiques propres à chaque pièce.
 - La reconnaissance automatique de la valeur monétaire.
 - Le calcul du montant total.
 - La validation du fonctionnement sur un jeu de données plus varié.
@@ -273,7 +280,7 @@ La détection dépend également des conditions de prise de vue, notamment de l'
 
 ### Phase 3 - Extraction des caractéristiques et reconnaissance
 
-- [ ] Étape 9 : extraction des caractéristiques des pièces (rayon, diamètre, surface, couleur).
+- [x] Étape 9 : extraction des caractéristiques des pièces (rayon, diamètre, surface, couleur).
 - [ ] Étape 10 : identification de la valeur de chaque pièce à partir des caractéristiques extraites.
 - [ ] Étape 11 : calcul du montant total des pièces reconnues.
 - [ ] Étape 12 : adaptation de la reconnaissance aux pièces en dollars taïwanais (TWD).
