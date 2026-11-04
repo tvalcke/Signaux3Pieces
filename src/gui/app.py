@@ -390,30 +390,97 @@ class CoinRecognitionApp(tk.Tk):
 
         details = []
         if not classified_coins:
-            details.append("Aucune pièce détectée.")
-        else:
-            details.append(f"Pièces détectées : {len(classified_coins)}")
-            for piece in classified_coins:
-                status = piece.get("status", "unknown")
-                value = piece.get("value")
+            self._show_result("Aucune pièce détectée.")
+            return
 
-                details.append("")
-                details.append(f"Pièce {piece['id']}")
+        details.append(f"Pièces détectées : {len(classified_coins)}")
+        for piece in classified_coins:
+            status = piece.get("status", "unknown")
+            value = piece.get("value")
 
-                if status == "identified":
-                    details.append(f"Valeur : {value} €")
-                    details.append("Statut : Identifiée")
-                elif status == "uncertain":
-                    details.append(f"Valeur estimée : {value} €")
-                    details.append("Statut : Incertaine")
-                    other_values = [f"{candidate} €" for candidate in piece.get("possible_values", []) if candidate != value]
-                    if other_values:
-                        details.append(f"Autres valeurs possibles : {', '.join(other_values)}")
-                else:
-                    details.append("Valeur : Indéterminée")
-                    details.append("Statut : Non identifiée")
+            details.append("")
+            details.append(f"Pièce {piece['id']}")
 
+            if status == "identified":
+                details.append(f"Valeur : {value} €")
+                details.append("Statut : Identifiée")
+            elif status == "uncertain":
+                details.append(f"Valeur estimée : {value} €")
+                details.append("Statut : Incertaine")
+                other_values = [f"{candidate} €" for candidate in piece.get("possible_values", []) if candidate != value]
+                if other_values:
+                    details.append(f"Autres valeurs possibles : {', '.join(other_values)}")
+            else:
+                details.append("Valeur : Indéterminée")
+                details.append("Statut : Non identifiée")
+
+        details.extend(["", *self._summarize_totals(classified_coins)])
         self._show_result("\n".join(details))
+
+    def _format_cents(self, cents: int) -> str:
+        """Affiche un montant en euros avec deux décimales."""
+        return f"{cents / 100:.2f} €"
+
+    def _summarize_totals(self, classified_coins: list[dict]) -> list[str]:
+        """Calcule le total identifié et le total estimé à partir des pièces déjà classées."""
+        if not classified_coins:
+            return ["Aucune pièce détectée."]
+
+        identified_count = 0
+        uncertain_count = 0
+        unknown_count = 0
+        identified_total_cents = 0
+        estimated_total_cents = 0
+        value_available_count = 0
+
+        for piece in classified_coins:
+            status = piece.get("status", "unknown")
+            value = piece.get("value")
+
+            if status == "identified":
+                identified_count += 1
+                if value is not None:
+                    cents = int(round(float(value) * 100))
+                    identified_total_cents += cents
+                    estimated_total_cents += cents
+                    value_available_count += 1
+            elif status == "uncertain":
+                uncertain_count += 1
+                if value is not None:
+                    cents = int(round(float(value) * 100))
+                    estimated_total_cents += cents
+                    value_available_count += 1
+            else:
+                unknown_count += 1
+
+        if value_available_count == 0:
+            return [
+                "Montant indéterminé.",
+                f"Pièces identifiées : {identified_count}",
+                f"Pièces incertaines : {uncertain_count}",
+                f"Pièces non identifiées : {unknown_count}",
+            ]
+
+        if identified_count == len(classified_coins) and uncertain_count == 0 and unknown_count == 0:
+            return [
+                f"Total : {self._format_cents(identified_total_cents)}",
+                f"Pièces identifiées : {identified_count}",
+                f"Pièces incertaines : {uncertain_count}",
+                f"Pièces non identifiées : {unknown_count}",
+            ]
+
+        summary = [
+            f"Total identifié : {self._format_cents(identified_total_cents)}",
+            f"Total estimé : {self._format_cents(estimated_total_cents)}",
+            f"Pièces identifiées : {identified_count}",
+            f"Pièces incertaines : {uncertain_count}",
+            f"Pièces non identifiées : {unknown_count}",
+        ]
+
+        if unknown_count > 0:
+            summary.append("Le total ne couvre que les pièces dont une valeur est disponible.")
+
+        return summary
 
     def _show_result(self, message: str) -> None:
         """Met à jour la zone de résultats avec un message lisible."""
