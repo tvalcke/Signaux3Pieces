@@ -164,6 +164,8 @@ La classification des pièces repose sur la combinaison des diamètres et des fa
 
 L'affichage de l'application a été simplifié pour présenter uniquement la pièce et son statut final, sans details techniques de calcul interne.
 
+Le calcul du montant total repose sur les pièces déjà classées. Le montant identifié ne prend en compte que les pièces entièrement reconnues, tandis que le montant estimé ajoute également les pièces incertaines en utilisant leur meilleure valeur disponible. Les additions sont faites en centimes pour éviter les erreurs d'arrondi et le total est ensuite converti en euros pour l'affichage.
+
 ## Traitement d'image
 
 Le traitement est réalisé progressivement avec OpenCV.
@@ -302,8 +304,9 @@ Pour la reconnaissance des pièces bicolores, le projet compare séparément les
 ### Phase 3 - Extraction des caractéristiques et reconnaissance
 
 - [x] Étape 9 : extraction des caractéristiques des pièces (rayon, diamètre, surface, couleur).
-- [ ] Étape 10 : identification de la valeur de chaque pièce à partir des caractéristiques extraites.
-- [ ] Étape 11 : calcul du montant total des pièces reconnues.
+- [x] Étape 10 : identification de la valeur de chaque pièce à partir des caractéristiques extraites.
+- [x] Étape 11 : calcul du montant total des pièces reconnues.
+- [x] Étape 11' : affiner le plus possible pour avoir un meilleur taux de réussite.
 - [ ] Étape 12 : adaptation de la reconnaissance aux pièces en dollars taïwanais (TWD).
 
 ### Phase 4 - Validation et finalisation
