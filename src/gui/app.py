@@ -19,7 +19,9 @@ from src.config import (
     is_path_allowed_for_currency,
     is_supported_image_extension,
 )
-from src.detection.detection import detect_circles, detect_edges, filter_circles
+from src.classification.classifier import classify_coins, get_classification_details
+from src.detection.detection import detect_circles, filter_circles
+from src.features.extraction import extract_features
 from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
 from src.utils.visualization import draw_circles
 
@@ -305,7 +307,10 @@ class CoinRecognitionApp(tk.Tk):
             blurred_array = gaussian_blur(gray_array, kernel_size=GAUSSIAN_KERNEL_SIZE)
             circles = detect_circles(blurred_array)
             valid_circles = filter_circles(circles, original_array.shape)
-            annotated_array = draw_circles(original_array, valid_circles)
+            features = extract_features(original_array, valid_circles)
+            classified_coins = classify_coins(features)
+            classification_details = get_classification_details(features)
+            annotated_array = draw_circles(original_array, valid_circles, features)
         except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
             self._refresh_status("Erreur lors de la détection des cercles.")
             self._show_result(f"Impossible de traiter l'image : {exc}")
@@ -332,24 +337,81 @@ class CoinRecognitionApp(tk.Tk):
             text="Pièces détectées — Hough + filtrage",
         )
 
-        rejected = len(circles) - len(valid_circles)
         self._refresh_status(
             f"Détection terminée : {len(circles)} détecté(s) par Hough, {len(valid_circles)} conservé(s)."
         )
 
-        details = [
-            f"Cercles détectés par Hough : {len(circles)}",
-            f"Cercles conservés après filtrage : {len(valid_circles)}",
-            f"Cercles rejetés : {rejected}",
-            "",
-        ]
+        # DEBUG : ancien bloc technique commenté pour garder les diagnostics de développement sans les afficher à l'utilisateur.
+        # rejected = len(circles) - len(valid_circles)
+        # details = [
+        #     f"Cercles détectés par Hough : {len(circles)}",
+        #     f"Cercles conservés après filtrage : {len(valid_circles)}",
+        #     f"Cercles rejetés : {rejected}",
+        #     f"Pièces détectées : {len(features)}",
+        #     "",
+        # ]
+        # if valid_circles:
+        #     details.append("Caractéristiques et identification :")
+        #     if classification_details["best_error"] is not None:
+        #         details.append(f"Meilleure erreur moyenne : {classification_details['best_error']:.4f}")
+        #         details.append(f"Classifications distinctes plausibles : {classification_details['distinct_count']}")
+        #     details.append(f"Diagnostic : {classification_details['reason']}")
+        #     for index, piece in enumerate(classified_coins):
+        #         reason = (
+        #             classification_details.get("reason_by_piece", [""] * len(classified_coins))[index]
+        #             if classification_details.get("reason_by_piece")
+        #             else ""
+        #         )
+        #         details.append("")
+        #         details.append(f"Pièce {piece['id']}")
+        #         details.append(f"Centre : ({piece['x']}, {piece['y']})")
+        #         details.append(f"Rayon : {piece['radius']} px")
+        #         details.append(f"Diamètre : {piece['diameter']} px")
+        #         details.append(f"Surface : {piece['area']} px²")
+        #         details.append(f"Couleur moyenne (BGR) : ({piece['mean_b']}, {piece['mean_g']}, {piece['mean_r']})")
+        #         details.append(f"Couleur centrale (BGR) : ({piece['center_bgr'][0]}, {piece['center_bgr'][1]}, {piece['center_bgr'][2]})")
+        #         details.append(f"Couleur extérieure (BGR) : ({piece['ring_bgr'][0]}, {piece['ring_bgr'][1]}, {piece['ring_bgr'][2]})")
+        #         if piece.get("center_hsv") is not None:
+        #             details.append(f"Couleur centrale (HSV mesuré) : ({piece['center_hsv'][0]}, {piece['center_hsv'][1]}, {piece['center_hsv'][2]})")
+        #         else:
+        #             details.append("Couleur centrale (HSV) : non disponible")
+        #         if piece.get("ring_hsv") is not None:
+        #             details.append(f"Couleur extérieure (HSV mesuré) : ({piece['ring_hsv'][0]}, {piece['ring_hsv'][1]}, {piece['ring_hsv'][2]})")
+        #         else:
+        #             details.append("Couleur extérieure (HSV) : non disponible")
+        #         details.append(f"Famille estimée : {piece.get('family')}")
+        #         details.append(f"Valeur estimée : {piece.get('value')} €")
+        #         if piece.get("possible_values"):
+        #             details.append(f"Valeurs possibles : {piece['possible_values']}")
+        #         if reason:
+        #             details.append(f"Raison : {reason}")
+        # else:
+        #     details.append("Aucune pièce n'a été détectée ou conservée après le filtrage.")
 
-        if valid_circles:
-            details.append("Cercles conservés :")
-            for index, (x, y, radius) in enumerate(valid_circles, start=1):
-                details.append(f"{index}. centre=({x}, {y}), rayon={radius} px")
+        details = []
+        if not classified_coins:
+            details.append("Aucune pièce détectée.")
         else:
-            details.append("Aucun cercle n'a été conservé après le filtrage.")
+            details.append(f"Pièces détectées : {len(classified_coins)}")
+            for piece in classified_coins:
+                status = piece.get("status", "unknown")
+                value = piece.get("value")
+
+                details.append("")
+                details.append(f"Pièce {piece['id']}")
+
+                if status == "identified":
+                    details.append(f"Valeur : {value} €")
+                    details.append("Statut : Identifiée")
+                elif status == "uncertain":
+                    details.append(f"Valeur estimée : {value} €")
+                    details.append("Statut : Incertaine")
+                    other_values = [f"{candidate} €" for candidate in piece.get("possible_values", []) if candidate != value]
+                    if other_values:
+                        details.append(f"Autres valeurs possibles : {', '.join(other_values)}")
+                else:
+                    details.append("Valeur : Indéterminée")
+                    details.append("Statut : Non identifiée")
 
         self._show_result("\n".join(details))
 

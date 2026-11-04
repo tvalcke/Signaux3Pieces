@@ -21,15 +21,31 @@ def display_image(image, title="Image"):
     return {"image": image, "title": title}
 
 
-def draw_circles(image: np.ndarray, circles: list[tuple[int, int, int]]) -> np.ndarray:
-    """Dessine des cercles et des centres sur une image couleur - étape 5 avec transfo de hough"""
+def draw_circles(
+    image: np.ndarray,
+    circles: list[tuple[int, int, int]],
+    features: list[dict] | None = None,
+) -> np.ndarray:
+    """Dessine des cercles, leurs centres et les identifiants des pièces."""
     if not isinstance(image, np.ndarray):
         raise ValueError("L'image doit être un tableau NumPy.")
 
     annotated = image.copy()
 
-    for x, y, radius in circles:
+    for index, (x, y, radius) in enumerate(circles, start=1):
         cv2.circle(annotated, (x, y), radius, (0, 255, 0), 2)
         cv2.circle(annotated, (x, y), 2, (0, 0, 255), -1)
+
+        if features is not None and index <= len(features):
+            piece_id = features[index - 1].get("id", index)
+            cv2.putText(
+                annotated,
+                str(piece_id),
+                (x + 10, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 0, 255),
+                2,
+            )
 
     return annotated

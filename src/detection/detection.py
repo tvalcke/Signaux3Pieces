@@ -103,7 +103,7 @@ def filter_circles(
     circles: list[tuple[int, int, int]],
     image_shape: tuple[int, ...],
 ) -> list[tuple[int, int, int]]:
-    """Filtre les cercles détectés pour garder ceux qui sont crédibles, pas détecter du bruit ou d'autres cercles"""
+    """Filtre les cercles détectés en vérifiant les coordonnées, les rayons et les doublons."""
     if not circles:
         return []
 
