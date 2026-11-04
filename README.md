@@ -306,7 +306,7 @@ Pour la reconnaissance des pièces bicolores, le projet compare séparément les
 - [x] Étape 9 : extraction des caractéristiques des pièces (rayon, diamètre, surface, couleur).
 - [x] Étape 10 : identification de la valeur de chaque pièce à partir des caractéristiques extraites.
 - [x] Étape 11 : calcul du montant total des pièces reconnues.
-- [x] Étape 11' : affiner le plus possible pour avoir un meilleur taux de réussite.
+- [ ] Étape 11' : affiner le plus possible pour avoir un meilleur taux de réussite.
 - [ ] Étape 12 : adaptation de la reconnaissance aux pièces en dollars taïwanais (TWD).
 
 ### Phase 4 - Validation et finalisation
