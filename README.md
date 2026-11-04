@@ -160,6 +160,10 @@ L'image originale apparaît à gauche et le résultat de la détection à droite
 
 Lorsqu'une nouvelle photographie est sélectionnée, le résultat de l'analyse précédente est réinitialisé.
 
+La classification des pièces repose sur la combinaison des diamètres et des familles de couleur. Pour chaque pièce, le programme distingue entre une valeur identifiée, une valeur incertaine avec plusieurs hypothèses plausibles, et une pièce non identifiée lorsqu'aucune valeur n'est suffisamment fiable.
+
+L'affichage de l'application a été simplifié pour présenter uniquement la pièce et son statut final, sans details techniques de calcul interne.
+
 ## Traitement d'image
 
 Le traitement est réalisé progressivement avec OpenCV.
@@ -209,6 +213,8 @@ La détection des contours reste disponible dans le projet, même si elle n'est 
 
 La transformée de Hough est utilisée pour rechercher les formes circulaires présentes sur la photographie.
 
+Le filtrage final repose sur les coordonnées du centre, le rayon et la suppression des doublons quasi identiques. Il n'utilise pas de score supplémentaire basé sur les contours Canny, afin de garder une logique simple et robuste.
+
 Elle permet de récupérer, pour chaque cercle détecté :
 
 - La position horizontale de son centre (x).
@@ -232,8 +238,11 @@ Il vise notamment à :
 - Écarter les cercles présentant des dimensions invalides.
 - Vérifier la position des centres dans l'image.
 - Limiter les détections multiples correspondant à une même pièce.
+- Contrôler la présence de contours autour du périmètre, afin de rejeter les faux positifs qui ne correspondent pas à une pièce réelle.
 
 Deux cercles ne sont pas considérés comme identiques uniquement parce qu'ils sont proches. Leurs centres et leurs rayons doivent être suffisamment similaires.
+
+La validation par contours repose sur un échantillonnage simple de points sur le cercle détecté et sur le calcul d'une proportion de points soutenus par les bords de l'image. Un score trop faible indique qu'un cercle n'a pas une structure suffisamment circulaire et suffisamment visible dans l'image.
 
 Le filtrage conserve les détections jugées valides pour l'affichage final.
 
@@ -245,17 +254,29 @@ La couleur moyenne est aussi calculée dans une zone légèrement plus petite qu
 
 Ces mesures sont stockées dans une liste de dictionnaires Python et servent de base pour les étapes suivantes de reconnaissance et d'analyse.
 
+### 8. Identification de la valeur des pièces
+
+La classification combine encore les diamètres mesurés avec les diamètres officiels des pièces en euros, puis elle affine la famille visuelle avec une analyse HSV de la zone centrale et de l'anneau extérieur.
+
+Les diamètres servent à estimer l'échelle de la photographie et à générer des hypothèses plausibles. La teinte HSV évite de confondre les pièces dorées avec les pièces cuivrées lorsque les différences de luminosité ou de rouge influencent fortement les canaux BGR.
+
+Les pixels trop sombres ou peu saturés sont ignorés pour calculer la teinte moyenne, car leur teinte est peu informative. Si la famille visuelle reste incertaine, la pièce est conservée comme indéterminée plutôt qu'attribuée à une mauvaise famille.
+
+Cette approche reste expérimentale et dépend encore de l'éclairage et des reflets, mais elle est plus prudente et plus explicite que l'analyse BGR seule.
+
 ## Limites actuelles
 
-Le projet permet de détecter des formes circulaires correspondant aux pièces et d'extraire leurs caractéristiques de base, mais plusieurs fonctionnalités restent à développer :
+Le projet permet de détecter des formes circulaires correspondant aux pièces, d'extraire leurs caractéristiques de base et de proposer une première identification de la valeur en euros à partir des diamètres. Plusieurs aspects restent à améliorer :
 
 - La distinction entre une pièce et un autre objet circulaire.
-- La reconnaissance automatique de la valeur monétaire.
+- La fiabilité de l'identification si plusieurs diamètres sont proches.
 - Le calcul du montant total.
 - La validation du fonctionnement sur un jeu de données plus varié.
+- L'extension à d'autres devises, notamment les dollars taïwanais.
 
 La détection dépend également des conditions de prise de vue, notamment de l'éclairage, du contraste, de la résolution et de la taille apparente des pièces.
 
+Pour la reconnaissance des pièces bicolores, le projet compare séparément les zones centrales et les anneaux. Une pièce de 1 euro est ainsi repérée par un centre argenté et un anneau doré, tandis qu'une pièce de 2 euros présente l'inverse. Cette logique reste simple et expérimentale, sans validation supplémentaire sur les contours Canny.
 
 ## Étapes prévues
 
@@ -306,3 +327,6 @@ La détection dépend également des conditions de prise de vue, notamment de l'
 - Année académique : 2026-2027
 
 Projet en cours de développement.
+
+
+> les readme et wikis sont repassés dans chatGPT pour structurer 
