@@ -95,6 +95,7 @@ Signaux3Pieces/
 │   ├── features/
 │   │   └── extraction.py
 │   ├── classification/
+│   │   ├── classifier_TW.py
 │   │   └── classifier.py
 │   ├── utils/
 │   │   └── visualization.py
@@ -307,11 +308,11 @@ Pour la reconnaissance des pièces bicolores, le projet compare séparément les
 - [x] Étape 10 : identification de la valeur de chaque pièce à partir des caractéristiques extraites.
 - [x] Étape 11 : calcul du montant total des pièces reconnues.
 - [ ] Étape 11' : affiner le plus possible pour avoir un meilleur taux de réussite.
-- [ ] Étape 12 : adaptation de la reconnaissance aux pièces en dollars taïwanais (TWD).
+- [x] Étape 12 : adaptation de la reconnaissance aux pièces en dollars taïwanais (TWD).
 
 ### Phase 4 - Validation et finalisation
 
-- [ ] Étape 13 : validation sur différentes photographies (nombre de pièces, éclairage, arrière-plan, position).
+- [x] Étape 13 : validation sur différentes photographies (nombre de pièces, éclairage, arrière-plan, position).
 - [ ] Étape 14 : analyse des résultats et des limites des algorithmes utilisés.
 - [ ] Étape 15 : finalisation du rapport, de la documentation et du poster académique.
 
@@ -319,7 +320,7 @@ Pour la reconnaissance des pièces bicolores, le projet compare séparément les
 ## Équipe
 
 - Valcke Tristan
-- Étudiant 2 : à compléter
+- Gaspard Munguia coca
 - Étudiant 3 : à compléter
 - Étudiant 4 : à compléter
 
