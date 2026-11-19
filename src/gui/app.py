@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import traceback
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, ttk
@@ -20,6 +21,7 @@ from src.config import (
     is_supported_image_extension,
 )
 from src.classification.classifier import classify_coins, get_classification_details
+from src.classification.classifier_TW import classify_coins_twd, get_classification_details_twd
 from src.detection.detection import detect_circles, filter_circles
 from src.features.extraction import extract_features
 from src.preprocessing.preprocessing import gaussian_blur, to_grayscale
@@ -28,7 +30,7 @@ from src.utils.visualization import draw_circles
 GAUSSIAN_KERNEL_SIZE = 7
 CANNY_THRESHOLD1 = 40
 CANNY_THRESHOLD2 = 120
-
+CURRENCY_SYMBOLS = {"EUR": "€", "TWD": "NT$"}
 
 class CoinRecognitionApp(tk.Tk):
     """Fenêtre principale de l'application de reconnaissance de pièces."""
@@ -46,7 +48,8 @@ class CoinRecognitionApp(tk.Tk):
         self.original_preview_photo: ImageTk.PhotoImage | None = None
         self.gray_preview_photo: ImageTk.PhotoImage | None = None
 
-        self.currency_var = tk.StringVar(value=self.current_currency)
+        self.analysis_done = False
+        self.currency_var = tk.StringVar(value=self.current_currency)   
         self.file_name_var = tk.StringVar(value="Aucun fichier sélectionné")
         self.image_info_var = tk.StringVar(value="Dimensions : --")
         self.currency_info_var = tk.StringVar(
@@ -205,6 +208,7 @@ class CoinRecognitionApp(tk.Tk):
         self.preview_photo = None
         self.original_preview_photo = None
         self.gray_preview_photo = None
+        self.analysis_done = False
         self.file_name_var.set("Aucun fichier sélectionné")
         self.image_info_var.set("Dimensions : --")
         self.preview_left.configure(text="Image originale", image="")
@@ -269,6 +273,7 @@ class CoinRecognitionApp(tk.Tk):
             return
 
         self.current_image_path = selected_path
+        self.analysis_done = False
         self.file_name_var.set(selected_path.name)
         self.image_info_var.set(
             f"Dimensions : {self.current_image.width} x {self.current_image.height} pixels"
@@ -293,10 +298,11 @@ class CoinRecognitionApp(tk.Tk):
         resized_image = ImageOps.contain(self.current_image, (preview_width, preview_height))
         self.preview_photo = ImageTk.PhotoImage(resized_image)
         self.preview_left.configure(image=self.preview_photo, text="")
-        self.preview_right.configure(
-            text="Pièces détectées — Hough + filtrage",
-            image="",
-        )
+        if not self.analysis_done:
+            self.preview_right.configure(
+                text="Pièces détectées — Hough + filtrage",
+                image="",       
+            )
 
     def run_analysis(self) -> None:
         """Charge l'image, filtre, détecte les cercles et les affiche dans l'interface."""
@@ -312,10 +318,20 @@ class CoinRecognitionApp(tk.Tk):
             circles = detect_circles(blurred_array)
             valid_circles = filter_circles(circles, original_array.shape)
             features = extract_features(original_array, valid_circles)
-            classified_coins = classify_coins(features)
-            classification_details = get_classification_details(features)
+            # classified_coins = classify_coins(features)
+            # classification_details = get_classification_details(features)
+
+            if self.current_currency == "TWD":
+                classified_coins = classify_coins_twd(features)
+                classification_details = get_classification_details_twd(features)
+            else:
+                classified_coins = classify_coins(features)
+                classification_details = get_classification_details(features)
+    
             annotated_array = draw_circles(original_array, valid_circles, features)
+
         except (FileNotFoundError, ValueError, TypeError, IsADirectoryError) as exc:
+            traceback.print_exc()
             self._refresh_status("Erreur lors de la détection des cercles.")
             self._show_result(f"Impossible de traiter l'image : {exc}")
             return
@@ -340,6 +356,7 @@ class CoinRecognitionApp(tk.Tk):
             image=self.gray_preview_photo,
             text="Pièces détectées — Hough + filtrage",
         )
+        self.analysis_done = True
 
         self._refresh_status(
             f"Détection terminée : {len(circles)} détecté(s) par Hough, {len(valid_circles)} conservé(s)."
@@ -406,12 +423,16 @@ class CoinRecognitionApp(tk.Tk):
             details.append(f"Pièce {piece['id']}")
 
             if status == "identified":
-                details.append(f"Valeur : {value} €")
+                details.append(f"Valeur : {self._format_value(value)}")
                 details.append("Statut : Identifiée")
             elif status == "uncertain":
-                details.append(f"Valeur estimée : {value} €")
+                details.append(f"Valeur estimée : {self._format_value(value)}")
                 details.append("Statut : Incertaine")
-                other_values = [f"{candidate} €" for candidate in piece.get("possible_values", []) if candidate != value]
+                other_values = [
+                    self._format_value(candidate)
+                    for candidate in piece.get("possible_values", [])
+                    if candidate != value
+                ]
                 if other_values:
                     details.append(f"Autres valeurs possibles : {', '.join(other_values)}")
             else:
@@ -421,9 +442,20 @@ class CoinRecognitionApp(tk.Tk):
         details.extend(["", *self._summarize_totals(classified_coins)])
         self._show_result("\n".join(details))
 
+    def _format_value(self, value) -> str:
+        """Affiche la valeur d'une pièce avec le symbole de la devise active."""
+        symbol = CURRENCY_SYMBOLS.get(self.current_currency, "€")
+        if self.current_currency == "TWD":
+            return f"{float(value):g} {symbol}"   # 5.0 -> "5", pas de décimales
+        return f"{value} {symbol}"
+
+
     def _format_cents(self, cents: int) -> str:
-        """Affiche un montant en euros avec deux décimales."""
-        return f"{cents / 100:.2f} €"
+        """Affiche un total avec le symbole de la devise active."""
+        symbol = CURRENCY_SYMBOLS.get(self.current_currency, "€")
+        if self.current_currency == "TWD":
+            return f"{cents / 100:.0f} {symbol}"  # le TWD n'a pas de centimes
+        return f"{cents / 100:.2f} {symbol}"
 
     def _summarize_totals(self, classified_coins: list[dict]) -> list[str]:
         """Calcule le total identifié et le total estimé à partir des pièces déjà classées."""
