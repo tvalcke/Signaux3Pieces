@@ -314,7 +314,7 @@ Pour la reconnaissance des pièces bicolores, le projet compare séparément les
 
 - [x] Étape 13 : validation sur différentes photographies (nombre de pièces, éclairage, arrière-plan, position).
 - [ ] Étape 14 : analyse des résultats et des limites des algorithmes utilisés.
-- [ ] Étape 15 : finalisation du rapport, de la documentation et du poster académique.
+- [ ] Étape 15 : (finalisation du rapport, de la documentation et) poster.
 
 
 ## Équipe
